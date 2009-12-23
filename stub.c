@@ -169,16 +169,7 @@ int stub_xmit(struct sk_buff *skb, struct net_device *dev)
     // skb->priority = 1;
 
     skb->dev = dev_master;
-
-    // skb_reserve(skb, LL_RESERVED_SPACE(dev));
-    // skb_reset_network_header(skb);
-
-    /* align data part correctly */
-    // if (dev->header_ops) {
-    //     skb->data -= dev->hard_header_len;
-    //     skb->tail -= dev->hard_header_len;
-    // }
-
+    
     dev_queue_xmit(skb); 
     return 0;
 }
