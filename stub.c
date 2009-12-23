@@ -225,7 +225,7 @@ int stub_open(struct net_device *dev)
 }
 
 
-int stub_close(struct net_device *dev)
+int stub_stop(struct net_device *dev)
 {
     netif_stop_queue(dev);
     return 0;
@@ -283,12 +283,22 @@ struct header_ops stub_header_ops ____cacheline_aligned = {
     .rebuild        = stub_rebuild_header,  // 
 };
 
+#ifdef HAVE_NET_DEVICE_OPS
+const struct net_device_ops stub_netdev_ops = {
+    .ndo_start_xmit = stub_xmit,
+    .ndo_do_ioctl   = stub_ioctl,
+    .ndo_get_stats  = stub_get_stats,
+    .ndo_open       = stub_open,
+    .ndo_stop       = stub_stop,
+    .ndo_set_mac_address = stub_set_address,
+};
+#endif
+
 
 void __init stub_setup(struct net_device *dev)
 {
     ether_setup(dev);
 
-    dev->flags              = dev_master->flags & ~IFF_UP;
     dev->header_ops         = &stub_header_ops;
 
     // dev->change_mtu         = NULL;
@@ -296,23 +306,25 @@ void __init stub_setup(struct net_device *dev)
     // dev->header_cache_update= NULL;
     // dev->hard_header_parse  = NULL;
 
-    dev->set_mac_address    = stub_set_address;
-
     dev->type               = ARPHRD_ETHER;
     dev->hard_header_len    = ETH_HLEN;
     dev->mtu                = ETH_DATA_LEN;
     dev->addr_len           = ETH_ALEN;
+    dev->flags              = dev_master->flags & ~IFF_UP;
     dev->tx_queue_len       = 1000; /* Ethernet wants good queues */
 
-    dev->hard_start_xmit = stub_xmit;
-    dev->set_multicast_list = NULL;
-
+#ifdef HAVE_NET_DEVICE_OPS
+    dev->netdev_ops = &stub_netdev_ops;
+#else
     dev->open = stub_open;
     dev->stop = stub_close;
     dev->do_ioctl = stub_ioctl;
-
+    dev->hard_start_xmit = stub_xmit;
+    dev->set_multicast_list = NULL;
     dev->get_stats = stub_get_stats;
+    dev->set_mac_address = stub_set_address;
     dev->neigh_setup = stub_neigh_setup_dev;
+#endif
 
     memset(dev->broadcast,0xFF, ETH_ALEN);
     random_ether_addr(dev->dev_addr);
