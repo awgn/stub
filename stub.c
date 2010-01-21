@@ -151,7 +151,6 @@ int stub_skb_recv(struct sk_buff *skb, struct net_device *dev,
 
     read_unlock(&dev_base_lock);
     kfree_skb(skb);
-
     return 0;
 }
 
@@ -214,7 +213,7 @@ int stub_set_address(struct net_device *dev, void *p)
 int stub_ioctl(struct net_device *dev, struct ifreq *ifr, int cmd)
 {
     /* stub interface has no ioctl */
-    return 0;
+    return -EOPNOTSUPP;
 }
 
 
@@ -317,7 +316,7 @@ void __init stub_setup(struct net_device *dev)
     dev->netdev_ops = &stub_netdev_ops;
 #else
     dev->open = stub_open;
-    dev->stop = stub_close;
+    dev->stop = stub_stop;
     dev->do_ioctl = stub_ioctl;
     dev->hard_start_xmit = stub_xmit;
     dev->set_multicast_list = NULL;
